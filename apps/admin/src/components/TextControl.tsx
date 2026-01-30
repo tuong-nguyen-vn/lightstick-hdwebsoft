@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { LightstickState } from '@lightstick/shared';
 import { CONFIG, DEFAULT_COLORS } from '@lightstick/shared';
 
@@ -11,10 +11,31 @@ interface TextControlProps {
 
 type SpeedPreset = 'slow' | 'medium' | 'fast';
 
+interface SavedText {
+  id: string;
+  text: string;
+  createdAt: number;
+}
+
 const SPEED_PRESETS: Record<SpeedPreset, { label: string; value: number }> = {
-  slow: { label: 'Slow', value: 400 },
-  medium: { label: 'Medium', value: 200 },
-  fast: { label: 'Fast', value: 80 },
+  slow: { label: 'Slow', value: 1000 },
+  medium: { label: 'Medium', value: 3000 },
+  fast: { label: 'Fast', value: 5000 },
+};
+
+const STORAGE_KEY = 'lightstick-saved-texts';
+
+const loadSavedTexts = (): SavedText[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveSavedTexts = (texts: SavedText[]) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(texts));
 };
 
 export default function TextControl({
@@ -27,11 +48,45 @@ export default function TextControl({
   const [speed, setSpeed] = useState(currentSpeed);
   const [textColor, setTextColor] = useState(currentColor);
   const [bgColor, setBgColor] = useState('#000000');
+  const [savedTexts, setSavedTexts] = useState<SavedText[]>([]);
+
+  useEffect(() => {
+    setSavedTexts(loadSavedTexts());
+  }, []);
+
+  const handleSaveText = useCallback(() => {
+    if (!text.trim()) return;
+
+    // Check if text already exists
+    if (savedTexts.some(item => item.text === text.trim())) {
+      return;
+    }
+
+    const newSavedText: SavedText = {
+      id: Date.now().toString(),
+      text: text.trim(),
+      createdAt: Date.now(),
+    };
+
+    const updated = [newSavedText, ...savedTexts];
+    setSavedTexts(updated);
+    saveSavedTexts(updated);
+  }, [text, savedTexts]);
+
+  const handleDeleteSavedText = useCallback((id: string) => {
+    const updated = savedTexts.filter(item => item.id !== id);
+    setSavedTexts(updated);
+    saveSavedTexts(updated);
+  }, [savedTexts]);
+
+  const handleSelectSavedText = useCallback((savedText: SavedText) => {
+    setText(savedText.text);
+  }, []);
 
   const getSpeedPreset = (value: number): SpeedPreset => {
-    if (value >= 300) return 'slow';
-    if (value >= 150) return 'medium';
-    return 'fast';
+    if (value >= 4000) return 'fast';
+    if (value >= 2000) return 'medium';
+    return 'slow';
   };
 
   const handleSpeedPreset = (preset: SpeedPreset) => {
@@ -40,14 +95,15 @@ export default function TextControl({
 
   const handleApply = useCallback(() => {
     if (!text.trim()) return;
-    
+
     onApply({
       mode: 'text',
       text: text.trim(),
       textSpeed: speed,
       color: textColor,
+      backgroundColor: bgColor,
     });
-  }, [onApply, text, speed, textColor]);
+  }, [onApply, text, speed, textColor, bgColor]);
 
   return (
     <div className="bg-slate-800 rounded-xl p-6">
@@ -60,7 +116,53 @@ export default function TextControl({
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm text-slate-400 mb-2">Message Text</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm text-slate-400">Message Text</label>
+            {text.trim() && !savedTexts.some(item => item.text === text.trim()) && (
+              <button
+                onClick={handleSaveText}
+                className="text-xs px-2 py-1 rounded bg-green-600 text-white hover:bg-green-500 transition-colors flex items-center gap-1"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Save
+              </button>
+            )}
+          </div>
+
+          {savedTexts.length > 0 && (
+            <div className="mb-3">
+              <label className="block text-xs text-slate-500 mb-1">Saved texts</label>
+              <div className="flex flex-wrap gap-2">
+                {savedTexts.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg cursor-pointer group transition-colors"
+                  >
+                    <span
+                      onClick={() => handleSelectSavedText(item)}
+                      className="text-sm text-white"
+                    >
+                      {item.text.length > 20 ? item.text.slice(0, 20) + '...' : item.text}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSavedText(item.id);
+                      }}
+                      className="text-slate-500 hover:text-red-400 transition-colors ml-1"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -99,9 +201,9 @@ export default function TextControl({
             className="w-full accent-primary-500"
           />
           <div className="flex justify-between text-xs text-slate-500 mt-1">
-            <span>Fast</span>
-            <span>{speed}ms</span>
             <span>Slow</span>
+            <span>{speed}ms</span>
+            <span>Fast</span>
           </div>
         </div>
 
@@ -162,8 +264,11 @@ export default function TextControl({
           style={{ backgroundColor: bgColor }}
         >
           <div
-            className="whitespace-nowrap animate-marquee text-2xl font-bold px-4"
-            style={{ color: textColor }}
+            className="whitespace-nowrap text-2xl font-bold px-4"
+            style={{
+              color: textColor,
+              animation: `marquee ${12000 / speed}s linear infinite`,
+            }}
           >
             {text || 'Preview text...'}
           </div>
@@ -185,9 +290,6 @@ export default function TextControl({
         @keyframes marquee {
           0% { transform: translateX(100%); }
           100% { transform: translateX(-100%); }
-        }
-        .animate-marquee {
-          animation: marquee 4s linear infinite;
         }
       `}</style>
     </div>

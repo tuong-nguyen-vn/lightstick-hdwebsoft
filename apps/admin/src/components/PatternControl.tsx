@@ -124,20 +124,20 @@ export default function PatternControl({
           <>
             <div>
               <label className="block text-sm text-slate-400 mb-2">
-                Speed: {speed}ms
+                Speed: {CONFIG.PATTERN_SPEED_MIN + CONFIG.PATTERN_SPEED_MAX - speed}ms
               </label>
               <input
                 type="range"
                 min={CONFIG.PATTERN_SPEED_MIN}
                 max={CONFIG.PATTERN_SPEED_MAX}
                 step={50}
-                value={speed}
-                onChange={(e) => setSpeed(Number(e.target.value))}
+                value={CONFIG.PATTERN_SPEED_MIN + CONFIG.PATTERN_SPEED_MAX - speed}
+                onChange={(e) => setSpeed(CONFIG.PATTERN_SPEED_MIN + CONFIG.PATTERN_SPEED_MAX - Number(e.target.value))}
                 className="w-full accent-primary-500"
               />
               <div className="flex justify-between text-xs text-slate-500 mt-1">
-                <span>Fast</span>
                 <span>Slow</span>
+                <span>Fast</span>
               </div>
             </div>
 
@@ -165,12 +165,58 @@ export default function PatternControl({
               </div>
             </div>
 
-            <div
-              className={`h-16 rounded-lg ${
-                isPlaying ? 'animate-pulse' : ''
-              }`}
-              style={{ backgroundColor: baseColor }}
-            />
+            <div className="h-16 rounded-lg overflow-hidden relative">
+              {selectedPattern === 'rainbow' ? (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(90deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff, #8000ff, #ff00ff, #ff0000)',
+                    backgroundSize: '200% 100%',
+                    animation: `rainbow ${speed}ms linear infinite`,
+                  }}
+                />
+              ) : (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundColor: baseColor,
+                    animation: `${selectedPattern} ${speed}ms ${
+                      ['pulse', 'fade', 'wave'].includes(selectedPattern)
+                        ? 'ease-in-out'
+                        : 'steps(1)'
+                    } infinite`,
+                  }}
+                />
+              )}
+            </div>
+
+            <style>{`
+              @keyframes blink {
+                0%, 49% { opacity: 1; }
+                50%, 100% { opacity: 0; }
+              }
+              @keyframes pulse {
+                0%, 100% { opacity: 0.3; }
+                50% { opacity: 1; }
+              }
+              @keyframes fade {
+                0%, 100% { opacity: 0.2; }
+                50% { opacity: 1; }
+              }
+              @keyframes rainbow {
+                0% { background-position: 0% 50%; }
+                100% { background-position: 200% 50%; }
+              }
+              @keyframes wave {
+                0%, 100% { opacity: 0.5; }
+                25% { opacity: 1; }
+                75% { opacity: 0.2; }
+              }
+              @keyframes strobe {
+                0%, 49% { opacity: 1; }
+                50%, 100% { opacity: 0; }
+              }
+            `}</style>
           </>
         )}
 

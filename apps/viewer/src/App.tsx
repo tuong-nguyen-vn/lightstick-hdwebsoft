@@ -35,10 +35,11 @@ export default function App() {
         ) : null;
       case 'text':
         return (
-          <MarqueeText 
+          <MarqueeText
             text={currentState.text || ''}
             speed={currentState.textSpeed}
             textColor={currentState.color || '#FFFFFF'}
+            backgroundColor={currentState.backgroundColor || '#000000'}
           />
         );
       default:
