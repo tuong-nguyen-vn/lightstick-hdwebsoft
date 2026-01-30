@@ -18,9 +18,9 @@ interface SavedText {
 }
 
 const SPEED_PRESETS: Record<SpeedPreset, { label: string; value: number }> = {
-  slow: { label: 'Slow', value: 400 },
-  medium: { label: 'Medium', value: 200 },
-  fast: { label: 'Fast', value: 80 },
+  slow: { label: 'Slow', value: 1000 },
+  medium: { label: 'Medium', value: 3000 },
+  fast: { label: 'Fast', value: 5000 },
 };
 
 const STORAGE_KEY = 'lightstick-saved-texts';
@@ -84,9 +84,9 @@ export default function TextControl({
   }, []);
 
   const getSpeedPreset = (value: number): SpeedPreset => {
-    if (value >= 300) return 'slow';
-    if (value >= 150) return 'medium';
-    return 'fast';
+    if (value >= 4000) return 'fast';
+    if (value >= 2000) return 'medium';
+    return 'slow';
   };
 
   const handleSpeedPreset = (preset: SpeedPreset) => {
@@ -95,14 +95,15 @@ export default function TextControl({
 
   const handleApply = useCallback(() => {
     if (!text.trim()) return;
-    
+
     onApply({
       mode: 'text',
       text: text.trim(),
       textSpeed: speed,
       color: textColor,
+      backgroundColor: bgColor,
     });
-  }, [onApply, text, speed, textColor]);
+  }, [onApply, text, speed, textColor, bgColor]);
 
   return (
     <div className="bg-slate-800 rounded-xl p-6">
@@ -200,9 +201,9 @@ export default function TextControl({
             className="w-full accent-primary-500"
           />
           <div className="flex justify-between text-xs text-slate-500 mt-1">
-            <span>Fast</span>
-            <span>{speed}ms</span>
             <span>Slow</span>
+            <span>{speed}ms</span>
+            <span>Fast</span>
           </div>
         </div>
 
@@ -263,8 +264,11 @@ export default function TextControl({
           style={{ backgroundColor: bgColor }}
         >
           <div
-            className="whitespace-nowrap animate-marquee text-2xl font-bold px-4"
-            style={{ color: textColor }}
+            className="whitespace-nowrap text-2xl font-bold px-4"
+            style={{
+              color: textColor,
+              animation: `marquee ${12000 / speed}s linear infinite`,
+            }}
           >
             {text || 'Preview text...'}
           </div>
@@ -286,9 +290,6 @@ export default function TextControl({
         @keyframes marquee {
           0% { transform: translateX(100%); }
           100% { transform: translateX(-100%); }
-        }
-        .animate-marquee {
-          animation: marquee 4s linear infinite;
         }
       `}</style>
     </div>

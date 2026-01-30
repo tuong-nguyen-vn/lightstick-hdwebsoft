@@ -9,6 +9,7 @@ export interface PatternParams {
 export interface LightstickState {
   mode: 'color' | 'text' | 'pattern';
   color?: string;
+  backgroundColor?: string;
   text?: string;
   textSpeed?: number;
   pattern?: PatternType;
