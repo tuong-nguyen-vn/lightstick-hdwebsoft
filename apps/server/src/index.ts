@@ -5,6 +5,7 @@ import { handleConnection } from './ws/handlers.js';
 import { createRoom, getRoom, getAllRooms } from './ws/room-manager.js';
 import { getRoomState } from './state/store.js';
 
+const PORT = parseInt(process.env.PORT || String(PORTS.SERVER), 10);
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'lightstick-admin-secret';
 
 const fastify = Fastify({
@@ -85,8 +86,8 @@ fastify.get('/ws/:roomCode/admin', { websocket: true }, (socket, request) => {
 
 const start = async () => {
   try {
-    await fastify.listen({ port: PORTS.SERVER, host: '0.0.0.0' });
-    console.log(`Server running on port ${PORTS.SERVER}`);
+    await fastify.listen({ port: PORT, host: '0.0.0.0' });
+    console.log(`Server running on port ${PORT}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
