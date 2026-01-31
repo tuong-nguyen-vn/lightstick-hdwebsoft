@@ -29,3 +29,27 @@ export async function getRoomInfo(roomCode: string): Promise<RoomInfoResponse> {
 
   return response.json();
 }
+
+export interface RoomListItem {
+  roomCode: string;
+  connectionCount: number;
+  viewerCount: number;
+  hasAdmin: boolean;
+  createdAt: number;
+  lastUpdated: number;
+  currentMode: string;
+}
+
+export interface RoomListResponse {
+  rooms: RoomListItem[];
+}
+
+export async function getRoomList(adminKey: string): Promise<RoomListResponse> {
+  const response = await fetch(`/api/rooms?key=${encodeURIComponent(adminKey)}`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch rooms');
+  }
+
+  return response.json();
+}

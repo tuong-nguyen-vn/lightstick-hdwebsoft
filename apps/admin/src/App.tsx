@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import Header from './components/Header';
 import ControlPanel from './components/ControlPanel';
 import ConnectionStatus from './components/ConnectionStatus';

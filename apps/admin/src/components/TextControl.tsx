@@ -260,11 +260,11 @@ export default function TextControl({
         </div>
 
         <div
-          className="h-16 rounded-lg flex items-center overflow-hidden"
+          className="h-16 rounded-lg flex items-center overflow-hidden relative"
           style={{ backgroundColor: bgColor }}
         >
           <div
-            className="whitespace-nowrap text-2xl font-bold px-4"
+            className="whitespace-nowrap text-2xl font-bold absolute"
             style={{
               color: textColor,
               animation: `marquee ${12000 / speed}s linear infinite`,
@@ -288,8 +288,8 @@ export default function TextControl({
 
       <style>{`
         @keyframes marquee {
-          0% { transform: translateX(100%); }
-          100% { transform: translateX(-100%); }
+          0% { left: 100%; }
+          100% { left: -100%; }
         }
       `}</style>
     </div>

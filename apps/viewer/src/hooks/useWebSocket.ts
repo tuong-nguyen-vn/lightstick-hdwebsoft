@@ -150,9 +150,9 @@ export function useWebSocket(roomCode: string): UseWebSocketReturn {
   }, [getServerUrl, send, startPingPong, calculateOffset]);
 
   useEffect(() => {
-    if (roomCode) {
-      connect();
-    }
+    if (!roomCode) return;
+    
+    connect();
 
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -166,7 +166,8 @@ export function useWebSocket(roomCode: string): UseWebSocketReturn {
         wsRef.current = null;
       }
     };
-  }, [roomCode, connect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomCode]);
 
   return {
     state,

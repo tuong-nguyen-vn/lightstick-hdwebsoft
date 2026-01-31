@@ -38,7 +38,7 @@ export function deleteRoomState(roomCode: string): void {
   roomStates.delete(roomCode);
 }
 
-export function createStateUpdate(roomCode: string, syncDelay: number = 300): StateUpdate {
+export function createStateUpdate(roomCode: string, syncDelay: number = CONFIG.SYNC_DELAY): StateUpdate {
   const roomState = getOrCreateRoomState(roomCode);
   const serverNow = Date.now();
   return {

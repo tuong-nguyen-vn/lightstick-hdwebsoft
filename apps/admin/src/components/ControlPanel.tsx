@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { LightstickState } from '@lightstick/shared';
 import type { RoomInfo as RoomInfoType } from '../App';
-import { createRoom } from '../api/rooms';
+import { createRoom, getRoomList, type RoomListItem } from '../api/rooms';
 import { useAdminWebSocket } from '../hooks/useAdminWebSocket';
 import ColorControl from './ColorControl';
 import TextControl from './TextControl';
@@ -10,6 +10,16 @@ import RoomInfo from './RoomInfo';
 
 const ADMIN_KEY = 'lightstick-admin-secret';
 
+function formatTimeAgo(timestamp: number): string {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return 'vừa xong';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} phút trước`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  return `${Math.floor(hours / 24)} ngày trước`;
+}
+
 interface ControlPanelProps {
   roomInfo: RoomInfoType | null;
   setRoomInfo: (info: RoomInfoType | null) => void;
@@ -17,9 +27,32 @@ interface ControlPanelProps {
   setIsConnected: (connected: boolean) => void;
 }
 
-function CreateRoomScreen({ onCreateRoom, isLoading }: { onCreateRoom: () => void; isLoading: boolean }) {
+interface CreateRoomScreenProps {
+  onCreateRoom: () => void;
+  onJoinRoom: (roomCode: string) => void;
+  isLoading: boolean;
+}
+
+function CreateRoomScreen({ onCreateRoom, onJoinRoom, isLoading }: CreateRoomScreenProps) {
+  const [rooms, setRooms] = useState<RoomListItem[]>([]);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const response = await getRoomList(ADMIN_KEY);
+        setRooms(response.rooms);
+      } catch {
+        // Ignore errors
+      } finally {
+        setIsLoadingRooms(false);
+      }
+    };
+    fetchRooms();
+  }, []);
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-4">
       <div className="bg-slate-800 rounded-xl p-8 text-center">
         <div className="w-16 h-16 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg
@@ -48,6 +81,53 @@ function CreateRoomScreen({ onCreateRoom, isLoading }: { onCreateRoom: () => voi
           {isLoading ? 'Creating...' : 'Create Room'}
         </button>
       </div>
+
+      {rooms.length > 0 && (
+        <div className="bg-slate-800 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Existing Rooms
+          </h3>
+          <div className="space-y-2">
+            {rooms.map((room) => (
+              <button
+                key={room.roomCode}
+                onClick={() => onJoinRoom(room.roomCode)}
+                className="w-full bg-slate-700 hover:bg-slate-600 rounded-lg p-4 text-left transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-white font-mono font-bold text-lg">{room.roomCode}</span>
+                    <div className="flex items-center gap-3 mt-1 text-sm text-slate-400">
+                      <span>{room.viewerCount} viewers</span>
+                      <span>•</span>
+                      <span className="capitalize">{room.currentMode}</span>
+                      <span>•</span>
+                      <span>{formatTimeAgo(room.lastUpdated)}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {room.hasAdmin && (
+                      <span className="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-1 rounded">
+                        Admin active
+                      </span>
+                    )}
+                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isLoadingRooms && (
+        <div className="text-center text-slate-400">Loading rooms...</div>
+      )}
     </div>
   );
 }
@@ -190,10 +270,21 @@ export default function ControlPanel({
     }
   };
 
+  const handleJoinRoom = (roomCode: string) => {
+    setRoomInfo({
+      roomCode,
+      adminKey: ADMIN_KEY,
+    });
+  };
+
   if (!roomInfo) {
     return (
       <>
-        <CreateRoomScreen onCreateRoom={handleCreateRoom} isLoading={isLoading} />
+        <CreateRoomScreen 
+          onCreateRoom={handleCreateRoom} 
+          onJoinRoom={handleJoinRoom}
+          isLoading={isLoading} 
+        />
         {error && (
           <div className="max-w-4xl mx-auto mt-4">
             <div className="bg-red-900/50 border border-red-700 rounded-lg p-4 text-red-300">

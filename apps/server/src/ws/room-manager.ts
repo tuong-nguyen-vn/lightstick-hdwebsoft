@@ -78,9 +78,6 @@ export function removeConnection(room: Room, connectionId: string): void {
       room.adminConnection = null;
     }
   }
-  if (room.connections.size === 0) {
-    cleanupRoom(room.code);
-  }
 }
 
 export function cleanupRoom(code: string): void {
@@ -113,20 +110,18 @@ export function broadcastToRoom(room: Room, message: string, excludeId?: string)
 }
 
 export function broadcastToViewers(room: Room, message: string): void {
-  let sentCount = 0;
-  for (const conn of room.connections.values()) {
-    console.log('[WS] Checking connection:', conn.id, 'isAdmin:', conn.isAdmin, 'readyState:', conn.socket.readyState);
-    if (!conn.isAdmin && conn.socket.readyState === 1) {
-      try {
-        conn.socket.send(message);
-        sentCount++;
-        console.log('[WS] Sent message to viewer:', conn.id);
-      } catch (err) {
-        console.log('[WS] Failed to send to:', conn.id, err);
-      }
+  const viewers = Array.from(room.connections.values())
+    .filter(conn => !conn.isAdmin && conn.socket.readyState === 1);
+  
+  viewers.forEach(conn => {
+    try {
+      conn.socket.send(message);
+    } catch {
+      // Connection might be closing
     }
-  }
-  console.log('[WS] Total messages sent:', sentCount);
+  });
+  
+  console.log('[WS] Broadcast to', viewers.length, 'viewers');
 }
 
 export function getAllRooms(): Map<string, Room> {

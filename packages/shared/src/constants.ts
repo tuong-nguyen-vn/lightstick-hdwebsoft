@@ -22,7 +22,7 @@ export const DEFAULT_COLORS = [
 
 export const DEFAULT_STATE = {
   mode: 'color' as const,
-  color: '#FFFFFF'
+  color: '#000000'
 };
 
 export const CONFIG = {
@@ -35,7 +35,8 @@ export const CONFIG = {
   TEXT_SPEED_MAX: 6000,
   TEXT_SPEED_DEFAULT: 200,
   PATTERN_SPEED_MIN: 50,
-  PATTERN_SPEED_MAX: 5000
+  PATTERN_SPEED_MAX: 5000,
+  SYNC_DELAY: 300, // ms - delay để đồng bộ tất cả devices
 } as const;
 
 export const PORTS = {

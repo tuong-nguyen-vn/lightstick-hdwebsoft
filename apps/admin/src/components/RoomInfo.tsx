@@ -11,7 +11,8 @@ export default function RoomInfo({ roomInfo, deviceCount }: RoomInfoProps) {
   const [showQR, setShowQR] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const viewerUrl = `${window.location.origin}/viewer/${roomInfo.roomCode}`;
+  const viewerBaseUrl = import.meta.env.VITE_VIEWER_URL || window.location.origin;
+  const viewerUrl = `${viewerBaseUrl}/viewer/${roomInfo.roomCode}`;
 
   const handleCopyLink = async () => {
     try {
@@ -81,10 +82,10 @@ export default function RoomInfo({ roomInfo, deviceCount }: RoomInfoProps) {
         </div>
 
         {showQR && (
-          <div className="bg-white rounded-xl p-4 flex justify-center">
+          <div className="bg-white rounded-xl p-8 flex justify-center">
             <QRCodeSVG
               value={viewerUrl}
-              size={200}
+              size={400}
               level="M"
               includeMargin={true}
             />

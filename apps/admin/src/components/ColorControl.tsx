@@ -19,11 +19,7 @@ export default function ColorControl({ onApply, currentColor = '#FFFFFF' }: Colo
 
   const handlePresetClick = useCallback((color: string) => {
     setSelectedColor(color);
-    onApply({
-      mode: 'color',
-      color,
-    });
-  }, [onApply]);
+  }, []);
 
   return (
     <div className="bg-slate-800 rounded-xl p-6">

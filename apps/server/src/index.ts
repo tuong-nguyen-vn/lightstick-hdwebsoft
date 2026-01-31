@@ -2,7 +2,8 @@ import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
 import { PORTS } from '@lightstick/shared';
 import { handleConnection } from './ws/handlers.js';
-import { createRoom, getRoom } from './ws/room-manager.js';
+import { createRoom, getRoom, getAllRooms } from './ws/room-manager.js';
+import { getRoomState } from './state/store.js';
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'lightstick-admin-secret';
 
@@ -19,6 +20,30 @@ fastify.get('/health', async () => {
 fastify.post('/api/rooms', async () => {
   const room = createRoom();
   return { roomCode: room.code };
+});
+
+fastify.get('/api/rooms', async (request, reply) => {
+  const { key } = request.query as { key?: string };
+  if (key !== ADMIN_SECRET) {
+    reply.code(401);
+    return { error: 'Unauthorized' };
+  }
+  
+  const allRooms = getAllRooms();
+  const roomList = Array.from(allRooms.values()).map(room => {
+    const state = getRoomState(room.code);
+    return {
+      roomCode: room.code,
+      connectionCount: room.connections.size,
+      viewerCount: Array.from(room.connections.values()).filter(c => !c.isAdmin).length,
+      hasAdmin: room.adminConnection !== null,
+      createdAt: room.createdAt,
+      lastUpdated: state?.lastUpdated || room.createdAt,
+      currentMode: state?.state.mode || 'color',
+    };
+  });
+  
+  return { rooms: roomList };
 });
 
 fastify.get('/api/rooms/:roomCode', async (request, reply) => {

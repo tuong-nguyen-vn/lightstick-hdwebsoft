@@ -4,10 +4,18 @@ export default defineConfig({
     plugins: [react()],
     server: {
         port: 5173,
-        host: true
+        host: true,
+        proxy: {
+            '/ws': {
+                target: 'http://localhost:3001',
+                ws: true,
+                changeOrigin: true,
+            },
+        },
     },
     build: {
         outDir: 'dist',
         sourcemap: true
-    }
+    },
+    appType: 'spa',
 });
