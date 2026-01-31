@@ -22,21 +22,16 @@ export function useScheduledState(
     const currentServerTime = Date.now() + serverOffset;
     const delay = startAt - currentServerTime;
 
-    console.log('[State] Update received:', { state, startAt, currentServerTime, delay, serverOffset });
-
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
     if (delay <= 0) {
-      console.log('[State] Applying immediately');
       setCurrentState(state);
       setPendingUpdate(null);
     } else {
-      console.log('[State] Scheduling for', delay, 'ms');
       setPendingUpdate(latestUpdate);
       timeoutRef.current = setTimeout(() => {
-        console.log('[State] Applying scheduled state');
         setCurrentState(state);
         setPendingUpdate(null);
       }, delay);

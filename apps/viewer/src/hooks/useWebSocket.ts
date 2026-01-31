@@ -10,14 +10,12 @@ interface UseWebSocketReturn {
   serverOffset: number;
   latestUpdate: StateUpdate | null;
   send: (message: WebSocketMessage) => void;
-  logs: string[];
 }
 
 export function useWebSocket(roomCode: string): UseWebSocketReturn {
   const [state, setState] = useState<ConnectionState>('disconnected');
   const [serverOffset, setServerOffset] = useState(0);
   const [latestUpdate, setLatestUpdate] = useState<StateUpdate | null>(null);
-  const [logs, setLogs] = useState<string[]>([]);
   
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptsRef = useRef(0);
@@ -28,12 +26,6 @@ export function useWebSocket(roomCode: string): UseWebSocketReturn {
   const isUnmountedRef = useRef(false);
   
   const CONNECTION_TIMEOUT = 5000;
-  
-  const addLog = useCallback((msg: string) => {
-    const time = new Date().toLocaleTimeString('vi-VN', { hour12: false });
-    setLogs(prev => [...prev.slice(-20), `${time} ${msg}`]);
-    console.log('[WS]', msg);
-  }, []);
 
   const getServerUrl = useCallback(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -74,16 +66,10 @@ export function useWebSocket(roomCode: string): UseWebSocketReturn {
   }, [send]);
 
   const connect = useCallback(() => {
-    addLog(`connect() rs=${wsRef.current?.readyState}`);
-    
     if (wsRef.current) {
       const rs = wsRef.current.readyState;
-      if (rs === WebSocket.OPEN) {
-        addLog('Already OPEN, skip');
-        return;
-      }
+      if (rs === WebSocket.OPEN) return;
       if (rs === WebSocket.CONNECTING || rs === WebSocket.CLOSING) {
-        addLog(`Closing stale rs=${rs}`);
         wsRef.current.onclose = null;
         wsRef.current.onerror = null;
         wsRef.current.onmessage = null;
@@ -95,22 +81,18 @@ export function useWebSocket(roomCode: string): UseWebSocketReturn {
     
     setState('connecting');
     const url = getServerUrl();
-    addLog(`URL: ${url}`);
     
     try {
       const ws = new WebSocket(url);
       wsRef.current = ws;
-      addLog(`WS created rs=${ws.readyState}`);
 
       connectionTimeoutRef.current = setTimeout(() => {
         if (ws.readyState === WebSocket.CONNECTING) {
-          addLog('TIMEOUT 5s, closing');
           ws.close();
         }
       }, CONNECTION_TIMEOUT);
 
       ws.onopen = () => {
-        addLog(`OPEN rs=${ws.readyState}`);
         if (connectionTimeoutRef.current) {
           clearTimeout(connectionTimeoutRef.current);
         }
@@ -129,7 +111,6 @@ export function useWebSocket(roomCode: string): UseWebSocketReturn {
       ws.onmessage = (event) => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
-          addLog(`MSG: ${message.type}`);
           
           switch (message.type) {
             case WS_EVENTS.PONG: {
@@ -148,18 +129,16 @@ export function useWebSocket(roomCode: string): UseWebSocketReturn {
                 startAt: (message as any).startAt,
                 state: (message as any).state,
               };
-              addLog(`STATE v=${stateUpdate.version} mode=${stateUpdate.state.mode}`);
               setLatestUpdate(stateUpdate);
               break;
             }
           }
         } catch {
-          addLog('MSG parse error');
+          // ignore parse errors
         }
       };
 
-      ws.onclose = (event) => {
-        addLog(`CLOSE code=${event.code}`);
+      ws.onclose = () => {
         setState('disconnected');
         wsRef.current = null;
         
@@ -172,27 +151,22 @@ export function useWebSocket(roomCode: string): UseWebSocketReturn {
 
         if (!isUnmountedRef.current && reconnectAttemptsRef.current < CONFIG.MAX_RECONNECT_ATTEMPTS) {
           const delay = Math.min(CONFIG.RECONNECT_DELAY * Math.pow(2, reconnectAttemptsRef.current), 10000);
-          addLog(`Retry in ${delay}ms (#${reconnectAttemptsRef.current + 1})`);
           reconnectTimeoutRef.current = setTimeout(() => {
             if (!isUnmountedRef.current) {
               reconnectAttemptsRef.current++;
               connect();
             }
           }, delay);
-        } else if (!isUnmountedRef.current) {
-          addLog('Max retries reached');
         }
       };
 
       ws.onerror = () => {
-        addLog('ERROR event');
         ws.close();
       };
-    } catch (err) {
-      addLog(`Create failed: ${err}`);
+    } catch {
       setState('disconnected');
     }
-  }, [getServerUrl, send, startPingPong, calculateOffset, addLog]);
+  }, [getServerUrl, send, startPingPong, calculateOffset]);
 
   useEffect(() => {
     if (!roomCode) return;
@@ -234,7 +208,6 @@ export function useWebSocket(roomCode: string): UseWebSocketReturn {
     isConnected: state === 'connected',
     serverOffset,
     latestUpdate,
-    send,
-    logs
+    send
   };
 }

@@ -17,11 +17,8 @@ const ROOM_CODE = getRoomCode();
 
 export default function App() {
   const [isActivated, setIsActivated] = useState(false);
-  const [showDebug, setShowDebug] = useState(true);
-  const { state: connectionState, serverOffset, latestUpdate, logs } = useWebSocket(ROOM_CODE);
+  const { state: connectionState, serverOffset, latestUpdate } = useWebSocket(ROOM_CODE);
   const { currentState } = useScheduledState(latestUpdate, serverOffset);
-
-  console.log('[App] latestUpdate:', latestUpdate, 'currentState:', currentState);
 
   const renderContent = () => {
     switch (currentState.mode) {
@@ -61,22 +58,6 @@ export default function App() {
       {renderContent()}
       <ConnectionStatus state={connectionState} />
       {!isActivated && <FullscreenPrompt onActivated={() => setIsActivated(true)} />}
-      
-      {showDebug && (
-        <div 
-          className="absolute top-2 left-2 bg-black/90 text-white text-xs p-2 rounded max-w-[95vw] max-h-[60vh] overflow-auto z-50"
-          onClick={() => setShowDebug(false)}
-        >
-          <div className="font-bold mb-1">Room: {ROOM_CODE} | WS: {connectionState}</div>
-          <div>Offset: {serverOffset}ms | Ver: {latestUpdate?.version ?? '-'} | Mode: {currentState.mode}</div>
-          <div className="border-t border-gray-600 mt-1 pt-1 font-mono text-[10px]">
-            {logs.map((log, i) => (
-              <div key={i} className="text-green-400">{log}</div>
-            ))}
-          </div>
-          <div className="text-gray-500 mt-1">(tap to hide)</div>
-        </div>
-      )}
     </div>
   );
 }
