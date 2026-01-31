@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { LightstickState, PatternParams } from '@lightstick/shared';
 import { getDefaultPatternParams } from '@lightstick/shared';
 
@@ -117,15 +117,7 @@ function MarqueeTextDisplay({
   textColor?: string;
   backgroundColor?: string;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [duration, setDuration] = useState(3);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const containerWidth = containerRef.current.offsetWidth;
-    const baseSpeed = speed / 50;
-    setDuration(Math.max(containerWidth / baseSpeed / 10, 2));
-  }, [text, speed]);
+  const duration = Math.max(5000 / speed, 2);
 
   if (!text) {
     return <div className="absolute inset-0 w-full h-full" style={{ backgroundColor }} />;
@@ -133,26 +125,26 @@ function MarqueeTextDisplay({
 
   return (
     <div 
-      ref={containerRef}
-      className="absolute inset-0 w-full h-full overflow-hidden flex items-center"
+      className="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center"
       style={{ backgroundColor }}
     >
       <div 
-        className="absolute whitespace-nowrap font-bold"
+        className="whitespace-nowrap font-bold"
         style={{
           color: textColor,
-          fontSize: '2rem',
-          animation: `marquee-preview ${duration}s linear infinite`,
+          fontSize: '3rem',
+          transform: 'rotate(90deg)',
+          animation: `marquee-vertical ${duration}s linear infinite`,
         }}
       >
         <span>{text}</span>
-        <span style={{ marginLeft: '50%' }}>{text}</span>
+        <span style={{ marginLeft: '2rem' }}>{text}</span>
       </div>
       
       <style>{`
-        @keyframes marquee-preview {
-          0% { transform: translateX(100%); }
-          100% { transform: translateX(-100%); }
+        @keyframes marquee-vertical {
+          0% { transform: rotate(90deg) translateX(100%); }
+          100% { transform: rotate(90deg) translateX(-100%); }
         }
       `}</style>
     </div>
