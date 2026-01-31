@@ -140,12 +140,14 @@ interface ConnectedControlPanelProps {
   roomInfo: RoomInfoType;
   setDeviceCount: (count: number) => void;
   setIsConnected: (connected: boolean) => void;
+  onChangeRoom: () => void;
 }
 
 function ConnectedControlPanel({
   roomInfo,
   setDeviceCount,
   setIsConnected,
+  onChangeRoom,
 }: ConnectedControlPanelProps) {
   const [activeTab, setActiveTab] = useState<ControlTab>('color');
   
@@ -216,7 +218,7 @@ function ConnectedControlPanel({
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
-      <RoomInfo roomInfo={roomInfo} deviceCount={deviceCount} />
+      <RoomInfo roomInfo={roomInfo} deviceCount={deviceCount} onChangeRoom={onChangeRoom} />
 
       <div className="bg-slate-800 rounded-xl p-2">
         <div className="flex gap-2">
@@ -305,6 +307,10 @@ export default function ControlPanel({
     });
   };
 
+  const handleChangeRoom = () => {
+    setRoomInfo(null);
+  };
+
   if (!roomInfo) {
     return (
       <>
@@ -329,6 +335,7 @@ export default function ControlPanel({
       roomInfo={roomInfo}
       setDeviceCount={setDeviceCount}
       setIsConnected={setIsConnected}
+      onChangeRoom={handleChangeRoom}
     />
   );
 }

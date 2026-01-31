@@ -5,9 +5,10 @@ import type { RoomInfo as RoomInfoType } from '../App';
 interface RoomInfoProps {
   roomInfo: RoomInfoType;
   deviceCount: number;
+  onChangeRoom?: () => void;
 }
 
-export default function RoomInfo({ roomInfo, deviceCount }: RoomInfoProps) {
+export default function RoomInfo({ roomInfo, deviceCount, onChangeRoom }: RoomInfoProps) {
   const [showQR, setShowQR] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -128,6 +129,18 @@ export default function RoomInfo({ roomInfo, deviceCount }: RoomInfoProps) {
         <p className="text-xs text-slate-500 text-center break-all">
           {viewerUrl}
         </p>
+
+        {onChangeRoom && (
+          <button
+            onClick={onChangeRoom}
+            className="w-full mt-2 bg-slate-700/50 hover:bg-slate-600 text-slate-400 hover:text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 border border-slate-600"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+            Đổi Room
+          </button>
+        )}
       </div>
     </div>
   );
