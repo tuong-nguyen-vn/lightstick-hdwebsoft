@@ -109,15 +109,18 @@ function PatternDisplay({ pattern, color, params }: {
 function MarqueeTextDisplay({ 
   text, 
   speed = 200, 
+  size = 60,
   textColor = '#FFFFFF',
   backgroundColor = '#000000'
 }: { 
   text: string; 
   speed?: number; 
+  size?: number;
   textColor?: string;
   backgroundColor?: string;
 }) {
   const duration = Math.max(5000 / speed, 2);
+  const fontSize = `${(size / 60) * 3}rem`;
 
   if (!text) {
     return <div className="absolute inset-0 w-full h-full" style={{ backgroundColor }} />;
@@ -132,7 +135,7 @@ function MarqueeTextDisplay({
         className="whitespace-nowrap font-bold"
         style={{
           color: textColor,
-          fontSize: '3rem',
+          fontSize,
           transform: 'rotate(90deg)',
           animation: `marquee-vertical ${duration}s linear infinite`,
         }}
@@ -190,6 +193,7 @@ export default function PhonePreview({ state }: PhonePreviewProps) {
           <MarqueeTextDisplay
             text={state.text || ''}
             speed={state.textSpeed}
+            size={state.textSize}
             textColor={state.color || '#FFFFFF'}
             backgroundColor={state.backgroundColor || '#000000'}
           />

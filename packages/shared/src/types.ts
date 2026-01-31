@@ -12,6 +12,7 @@ export interface LightstickState {
   backgroundColor?: string;
   text?: string;
   textSpeed?: number;
+  textSize?: number;
   pattern?: PatternType;
   patternParams?: PatternParams;
   icon?: string;

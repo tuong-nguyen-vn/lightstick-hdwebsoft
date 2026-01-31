@@ -7,6 +7,7 @@ interface TextControlProps {
   onPreview?: (state: LightstickState) => void;
   currentText?: string;
   currentSpeed?: number;
+  currentSize?: number;
   currentColor?: string;
 }
 
@@ -44,42 +45,50 @@ export default function TextControl({
   onPreview,
   currentText = '',
   currentSpeed = CONFIG.TEXT_SPEED_DEFAULT,
+  currentSize = CONFIG.TEXT_SIZE_DEFAULT,
   currentColor = '#FFFFFF',
 }: TextControlProps) {
   const [text, setText] = useState(currentText);
   const [speed, setSpeed] = useState(currentSpeed);
+  const [size, setSize] = useState(currentSize);
   const [textColor, setTextColor] = useState(currentColor);
   const [bgColor, setBgColor] = useState('#000000');
   const [savedTexts, setSavedTexts] = useState<SavedText[]>([]);
 
-  const triggerPreview = useCallback((newText?: string, newSpeed?: number, newTextColor?: string, newBgColor?: string) => {
+  const triggerPreview = useCallback((newText?: string, newSpeed?: number, newSize?: number, newTextColor?: string, newBgColor?: string) => {
     onPreview?.({
       mode: 'text',
       text: newText ?? text,
       textSpeed: newSpeed ?? speed,
+      textSize: newSize ?? size,
       color: newTextColor ?? textColor,
       backgroundColor: newBgColor ?? bgColor,
     });
-  }, [onPreview, text, speed, textColor, bgColor]);
+  }, [onPreview, text, speed, size, textColor, bgColor]);
 
   const handleTextChange = useCallback((newText: string) => {
     setText(newText);
-    onPreview?.({ mode: 'text', text: newText, textSpeed: speed, color: textColor, backgroundColor: bgColor });
-  }, [onPreview, speed, textColor, bgColor]);
+    onPreview?.({ mode: 'text', text: newText, textSpeed: speed, textSize: size, color: textColor, backgroundColor: bgColor });
+  }, [onPreview, speed, size, textColor, bgColor]);
 
   const handleSpeedChange = useCallback((newSpeed: number) => {
     setSpeed(newSpeed);
     triggerPreview(undefined, newSpeed);
   }, [triggerPreview]);
 
+  const handleSizeChange = useCallback((newSize: number) => {
+    setSize(newSize);
+    triggerPreview(undefined, undefined, newSize);
+  }, [triggerPreview]);
+
   const handleTextColorChange = useCallback((newColor: string) => {
     setTextColor(newColor);
-    triggerPreview(undefined, undefined, newColor);
+    triggerPreview(undefined, undefined, undefined, newColor);
   }, [triggerPreview]);
 
   const handleBgColorChange = useCallback((newColor: string) => {
     setBgColor(newColor);
-    triggerPreview(undefined, undefined, undefined, newColor);
+    triggerPreview(undefined, undefined, undefined, undefined, newColor);
   }, [triggerPreview]);
 
   useEffect(() => {
@@ -132,10 +141,11 @@ export default function TextControl({
       mode: 'text',
       text: text.trim(),
       textSpeed: speed,
+      textSize: size,
       color: textColor,
       backgroundColor: bgColor,
     });
-  }, [onApply, text, speed, textColor, bgColor]);
+  }, [onApply, text, speed, size, textColor, bgColor]);
 
   return (
     <div className="bg-slate-800 rounded-xl p-6">
@@ -251,6 +261,23 @@ export default function TextControl({
             <span>Slow</span>
             <span>{speed}ms</span>
             <span>Fast</span>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm text-slate-400 mb-2">Text Size: {size}%</label>
+          <input
+            type="range"
+            min={CONFIG.TEXT_SIZE_MIN}
+            max={CONFIG.TEXT_SIZE_MAX}
+            step={5}
+            value={size}
+            onChange={(e) => handleSizeChange(Number(e.target.value))}
+            className="w-full accent-primary-500"
+          />
+          <div className="flex justify-between text-xs text-slate-500 mt-1">
+            <span>Nhỏ</span>
+            <span>Lớn</span>
           </div>
         </div>
 

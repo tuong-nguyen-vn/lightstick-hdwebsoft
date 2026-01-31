@@ -3,6 +3,7 @@ import { useRef, useEffect, useState } from 'react';
 interface MarqueeTextProps {
   text: string;
   speed?: number;
+  size?: number;
   textColor?: string;
   backgroundColor?: string;
 }
@@ -10,6 +11,7 @@ interface MarqueeTextProps {
 export default function MarqueeText({ 
   text,
   speed = 200,
+  size = 60,
   textColor = '#FFFFFF',
   backgroundColor = '#000000'
 }: MarqueeTextProps) {
@@ -42,7 +44,7 @@ export default function MarqueeText({
     const calculatedDuration = distance / (speed / 10);
     setDuration(Math.max(calculatedDuration, 1));
     setIsReady(true);
-  }, [text, speed, isPortrait]);
+  }, [text, speed, size, isPortrait]);
 
   if (!text) {
     return (
@@ -53,7 +55,7 @@ export default function MarqueeText({
     );
   }
 
-  const fontSize = isPortrait ? '60vw' : '20vw';
+  const fontSize = isPortrait ? `${size}vw` : `${size / 3}vw`;
   const gap = isPortrait ? '50vh' : '50vw';
 
   if (isPortrait) {

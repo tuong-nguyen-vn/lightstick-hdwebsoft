@@ -37,6 +37,7 @@ export default function App() {
           <MarqueeText
             text={currentState.text || ''}
             speed={currentState.textSpeed}
+            size={currentState.textSize}
             textColor={currentState.color || '#FFFFFF'}
             backgroundColor={currentState.backgroundColor || '#000000'}
           />

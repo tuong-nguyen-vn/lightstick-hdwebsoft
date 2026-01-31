@@ -264,6 +264,7 @@ function ConnectedControlPanel({
             onPreview={handlePreview}
             currentText={currentState?.text}
             currentSpeed={currentState?.textSpeed}
+            currentSize={currentState?.textSize}
             currentColor={currentState?.color}
           />
         )}
