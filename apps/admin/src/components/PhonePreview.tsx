@@ -120,7 +120,7 @@ function MarqueeTextDisplay({
   backgroundColor?: string;
 }) {
   const duration = Math.max(10000 / speed, 2);
-  const fontSize = `${(size / 60) * 3}rem`;
+  const fontSize = `${(size / 60) * 6}rem`;
 
   if (!text) {
     return <div className="absolute inset-0 w-full h-full" style={{ backgroundColor }} />;
