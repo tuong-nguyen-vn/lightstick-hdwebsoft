@@ -9,6 +9,7 @@ import PatternControl from './PatternControl';
 import SceneControl from './SceneControl';
 import IconControl from './IconControl';
 import RoomInfo from './RoomInfo';
+import PhonePreview from './PhonePreview';
 
 const ADMIN_KEY = 'lightstick-admin-secret';
 
@@ -217,59 +218,67 @@ function ConnectedControlPanel({
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <RoomInfo roomInfo={roomInfo} deviceCount={deviceCount} onChangeRoom={onChangeRoom} />
+    <div className="flex gap-8 justify-center">
+      {/* Main controls */}
+      <div className="max-w-4xl flex-1 space-y-4">
+        <RoomInfo roomInfo={roomInfo} deviceCount={deviceCount} onChangeRoom={onChangeRoom} />
 
-      <div className="bg-slate-800 rounded-xl p-2">
-        <div className="flex gap-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-colors ${
-                activeTab === tab.key
-                  ? 'bg-primary-500 text-white'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-700'
-              }`}
-            >
-              {tab.icon}
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
+        <div className="bg-slate-800 rounded-xl p-2">
+          <div className="flex gap-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-colors ${
+                  activeTab === tab.key
+                    ? 'bg-primary-500 text-white'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                }`}
+              >
+                {tab.icon}
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
+
+        {activeTab === 'color' && (
+          <ColorControl
+            onApply={handleSendState}
+            currentColor={currentState?.color}
+          />
+        )}
+
+        {activeTab === 'text' && (
+          <TextControl
+            onApply={handleSendState}
+            currentText={currentState?.text}
+            currentSpeed={currentState?.textSpeed}
+            currentColor={currentState?.color}
+          />
+        )}
+
+        {activeTab === 'pattern' && (
+          <PatternControl
+            onApply={handleSendState}
+            currentPattern={currentState?.pattern}
+            currentParams={currentState?.patternParams}
+          />
+        )}
+
+        {activeTab === 'scenes' && (
+          <SceneControl onApply={handleSendState} />
+        )}
+
+        {activeTab === 'icon' && (
+          <IconControl onApply={handleSendState} />
+        )}
       </div>
 
-      {activeTab === 'color' && (
-        <ColorControl
-          onApply={handleSendState}
-          currentColor={currentState?.color}
-        />
-      )}
-
-      {activeTab === 'text' && (
-        <TextControl
-          onApply={handleSendState}
-          currentText={currentState?.text}
-          currentSpeed={currentState?.textSpeed}
-          currentColor={currentState?.color}
-        />
-      )}
-
-      {activeTab === 'pattern' && (
-        <PatternControl
-          onApply={handleSendState}
-          currentPattern={currentState?.pattern}
-          currentParams={currentState?.patternParams}
-        />
-      )}
-
-      {activeTab === 'scenes' && (
-        <SceneControl onApply={handleSendState} />
-      )}
-
-      {activeTab === 'icon' && (
-        <IconControl onApply={handleSendState} />
-      )}
+      {/* Phone Preview - hidden on small screens */}
+      <div className="hidden xl:block sticky top-4 h-fit">
+        <PhonePreview state={currentState} />
+      </div>
     </div>
   );
 }
