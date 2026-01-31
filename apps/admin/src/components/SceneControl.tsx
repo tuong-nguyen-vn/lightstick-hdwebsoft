@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import type { LightstickState } from '@lightstick/shared';
 import { YEP_SCENES, type ScenePreset } from '@lightstick/shared';
 
@@ -22,13 +23,22 @@ function getPatternIcon(pattern?: string): JSX.Element {
 }
 
 export default function SceneControl({ onApply, onPreview }: SceneControlProps) {
-  const handleSceneSelect = (scene: ScenePreset) => {
-    onApply(scene.state);
-  };
+  const [selectedScene, setSelectedScene] = useState<ScenePreset | null>(null);
 
-  const handleSceneHover = (scene: ScenePreset) => {
+  const handleSceneSelect = useCallback((scene: ScenePreset) => {
+    setSelectedScene(scene);
     onPreview?.(scene.state);
-  };
+  }, [onPreview]);
+
+  const handleSceneHover = useCallback((scene: ScenePreset) => {
+    onPreview?.(scene.state);
+  }, [onPreview]);
+
+  const handleApply = useCallback(() => {
+    if (selectedScene) {
+      onApply(selectedScene.state);
+    }
+  }, [onApply, selectedScene]);
 
   return (
     <div className="bg-slate-800 rounded-xl p-6">
@@ -45,7 +55,11 @@ export default function SceneControl({ onApply, onPreview }: SceneControlProps) 
             key={scene.id}
             onClick={() => handleSceneSelect(scene)}
             onMouseEnter={() => handleSceneHover(scene)}
-            className="p-4 rounded-xl border-2 border-slate-600 hover:border-primary-500 bg-slate-700/50 hover:bg-slate-700 transition-all flex flex-col items-center gap-2"
+            className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+              selectedScene?.id === scene.id
+                ? 'border-primary-500 bg-slate-700 ring-2 ring-primary-500/50'
+                : 'border-slate-600 hover:border-primary-500 bg-slate-700/50 hover:bg-slate-700'
+            }`}
           >
             <div className="flex items-center gap-2">
               {scene.state.color && (
@@ -64,8 +78,19 @@ export default function SceneControl({ onApply, onPreview }: SceneControlProps) 
         ))}
       </div>
 
+      <button
+        onClick={handleApply}
+        disabled={!selectedScene}
+        className="w-full mt-4 bg-primary-500 hover:bg-primary-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        Apply Scene
+      </button>
+
       <p className="text-xs text-slate-500 mt-4 text-center">
-        Nhấn vào scene để áp dụng ngay cho tất cả lightsticks
+        Chọn scene để xem preview, nhấn Apply để áp dụng
       </p>
     </div>
   );
