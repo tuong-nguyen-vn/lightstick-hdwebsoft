@@ -53,6 +53,7 @@ export function handleConnection(
 
   const roomState = getOrCreateRoomState(roomCode);
   const stateUpdate = createStateUpdateMessage(roomState.version, roomState.state, SYNC_DELAY);
+  console.log('[WS] Sending initial state to new viewer:', JSON.stringify(stateUpdate));
   sendStateUpdate(socket, stateUpdate);
 
   if (isAdmin) {

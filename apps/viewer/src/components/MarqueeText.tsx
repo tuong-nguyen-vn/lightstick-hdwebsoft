@@ -14,13 +14,16 @@ export default function MarqueeText({
   backgroundColor = '#000000'
 }: MarqueeTextProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
   const [duration, setDuration] = useState(10);
+  const [translateDistance, setTranslateDistance] = useState(0);
   const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
       setIsPortrait(window.innerHeight > window.innerWidth);
+      setIsReady(false);
     };
     
     window.addEventListener('resize', handleResize);
@@ -28,17 +31,17 @@ export default function MarqueeText({
   }, []);
 
   useEffect(() => {
-    if (!containerRef.current || !textRef.current) return;
+    if (!textRef.current) return;
     
-    const containerSize = isPortrait 
-      ? containerRef.current.offsetHeight 
-      : containerRef.current.offsetWidth;
-    const textSize = isPortrait
-      ? textRef.current.offsetHeight
-      : textRef.current.offsetWidth;
-    const totalDistance = containerSize + textSize;
-    const calculatedDuration = totalDistance / (speed / 10);
+    const textWidth = textRef.current.offsetWidth;
+    const gap = isPortrait ? window.innerHeight * 0.5 : window.innerWidth * 0.5;
+    const distance = textWidth + gap;
+    
+    setTranslateDistance(distance);
+    
+    const calculatedDuration = distance / (speed / 10);
     setDuration(Math.max(calculatedDuration, 1));
+    setIsReady(true);
   }, [text, speed, isPortrait]);
 
   if (!text) {
@@ -50,44 +53,63 @@ export default function MarqueeText({
     );
   }
 
+  const fontSize = isPortrait ? '60vw' : '20vw';
+  const gap = isPortrait ? '50vh' : '50vw';
+
+  if (isPortrait) {
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+    return (
+      <div 
+        ref={containerRef}
+        className="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center"
+        style={{ backgroundColor }}
+      >
+        <div 
+          className="whitespace-nowrap font-bold"
+          style={{
+            color: textColor,
+            fontSize,
+            transform: `rotate(90deg) translateX(${screenHeight}px)`,
+            animation: isReady ? `marquee-up ${duration}s linear infinite` : 'none',
+          }}
+        >
+          <span ref={textRef}>{text}</span>
+          <span style={{ marginLeft: gap }}>{text}</span>
+        </div>
+        
+        <style>{`
+          @keyframes marquee-up {
+            0% { transform: rotate(90deg) translateX(${screenHeight}px); }
+            100% { transform: rotate(90deg) translateX(${screenHeight - translateDistance}px); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <div 
       ref={containerRef}
-      className="absolute inset-0 w-full h-full overflow-hidden"
+      className="absolute inset-0 w-full h-full overflow-hidden flex items-center"
       style={{ backgroundColor }}
     >
       <div 
-        ref={textRef}
-        className="whitespace-nowrap font-bold absolute"
+        className="absolute whitespace-nowrap font-bold"
         style={{
           color: textColor,
-          fontSize: isPortrait ? '20vh' : '20vw',
-          animation: `${isPortrait ? 'marquee-vertical' : 'marquee-horizontal'} ${duration}s linear infinite`,
-          ...(isPortrait ? {
-            writingMode: 'vertical-rl',
-            textOrientation: 'mixed',
-            transform: 'rotate(180deg)',
-            right: '50%',
-            translateX: '50%',
-            top: '100%',
-          } : {
-            top: '50%',
-            transform: 'translateY(-50%)',
-            left: '100%',
-          })
+          fontSize,
+          left: 0,
+          animation: isReady ? `marquee-left ${duration}s linear infinite` : 'none',
         }}
       >
-        {text}
+        <span ref={textRef}>{text}</span>
+        <span style={{ marginLeft: gap }}>{text}</span>
       </div>
       
       <style>{`
-        @keyframes marquee-horizontal {
-          0% { left: 100%; }
-          100% { left: -100%; }
-        }
-        @keyframes marquee-vertical {
-          0% { top: 100%; }
-          100% { top: -100%; }
+        @keyframes marquee-left {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-${translateDistance}px); }
         }
       `}</style>
     </div>
