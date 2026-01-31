@@ -119,7 +119,8 @@ function MarqueeTextDisplay({
   textColor?: string;
   backgroundColor?: string;
 }) {
-  const duration = Math.max(5000 / speed, 2);
+  const baseDuration = 300 / (speed / 10);
+  const duration = Math.max(baseDuration, 1);
   const fontSize = `${(size / 60) * 3}rem`;
 
   if (!text) {
