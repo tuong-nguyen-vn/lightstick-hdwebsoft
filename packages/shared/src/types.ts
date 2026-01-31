@@ -7,13 +7,14 @@ export interface PatternParams {
 }
 
 export interface LightstickState {
-  mode: 'color' | 'text' | 'pattern';
+  mode: 'color' | 'text' | 'pattern' | 'icon';
   color?: string;
   backgroundColor?: string;
   text?: string;
   textSpeed?: number;
   pattern?: PatternType;
   patternParams?: PatternParams;
+  icon?: string;
 }
 
 export interface StateUpdate {

@@ -1,3 +1,5 @@
+import type { LightstickState } from './types.js';
+
 export const WS_EVENTS = {
   STATE_UPDATE: 'state_update',
   DEVICE_REGISTER: 'device_register',
@@ -8,6 +10,7 @@ export const WS_EVENTS = {
 } as const;
 
 export const DEFAULT_COLORS = [
+  '#4A90D9', // HDS Blue (Brand Color)
   '#FF0000', // Red
   '#FF8000', // Orange
   '#FFFF00', // Yellow
@@ -44,3 +47,24 @@ export const PORTS = {
   ADMIN: 3000,
   VIEWER: 3002
 } as const;
+
+export const YEP_PRESET_TEXTS = [
+  'HDWEBSOFT', 'YEP 2026', 'GO HDS!', '1-2-3 YÔ!', '🔥🔥🔥'
+] as const;
+
+export interface ScenePreset {
+  id: string;
+  label: string;
+  description?: string;
+  state: LightstickState;
+}
+
+export const YEP_SCENES: ScenePreset[] = [
+  { id: 'hds-blue', label: 'HDS Blue', state: { mode: 'color', color: '#4A90D9' } },
+  { id: 'chill', label: 'Chill', state: { mode: 'pattern', pattern: 'pulse', color: '#4A90D9', patternParams: { speed: 2000 } } },
+  { id: 'party', label: 'Party', state: { mode: 'pattern', pattern: 'rainbow', patternParams: { speed: 3000 } } },
+  { id: 'hype', label: 'Hype', state: { mode: 'pattern', pattern: 'strobe', color: '#FFFFFF', patternParams: { speed: 100 } } },
+  { id: 'countdown', label: 'Countdown', state: { mode: 'pattern', pattern: 'blink', color: '#FF0000', patternParams: { speed: 300 } } },
+];
+
+export const ICON_PRESETS = ['🔥', '❤️', '⭐', '🎉', '👏', '🚀', '🌍', '💙'] as const;

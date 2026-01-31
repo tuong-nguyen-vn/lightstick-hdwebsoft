@@ -4,6 +4,7 @@ import ConnectionStatus from './components/ConnectionStatus';
 import ColorDisplay from './components/ColorDisplay';
 import PatternRenderer from './components/PatternRenderer';
 import MarqueeText from './components/MarqueeText';
+import IconDisplay from './components/IconDisplay';
 import FullscreenPrompt from './components/FullscreenPrompt';
 
 function getRoomCode(): string {
@@ -41,6 +42,13 @@ export default function App() {
             speed={currentState.textSpeed}
             textColor={currentState.color || '#FFFFFF'}
             backgroundColor={currentState.backgroundColor || '#000000'}
+          />
+        );
+      case 'icon':
+        return (
+          <IconDisplay
+            icon={currentState.icon || '🎉'}
+            backgroundColor={currentState.backgroundColor}
           />
         );
       default:

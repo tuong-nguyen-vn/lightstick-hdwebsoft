@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { LightstickState } from '@lightstick/shared';
-import { CONFIG, DEFAULT_COLORS } from '@lightstick/shared';
+import { CONFIG, DEFAULT_COLORS, YEP_PRESET_TEXTS } from '@lightstick/shared';
 
 interface TextControlProps {
   onApply: (state: LightstickState) => void;
@@ -129,6 +129,21 @@ export default function TextControl({
                 Save
               </button>
             )}
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs text-slate-500 mb-1">Preset texts (YEP)</label>
+            <div className="flex flex-wrap gap-2">
+              {YEP_PRESET_TEXTS.map((preset) => (
+                <button
+                  key={preset}
+                  onClick={() => setText(preset)}
+                  className="px-3 py-1.5 bg-primary-500/20 hover:bg-primary-500/40 text-primary-300 rounded-lg text-sm transition-colors"
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
           </div>
 
           {savedTexts.length > 0 && (

@@ -7,9 +7,9 @@ export default defineConfig({
         host: true,
         proxy: {
             '/ws': {
-                target: 'http://localhost:3001',
+                target: 'http://0.0.0.0:3001',
                 ws: true,
-                changeOrigin: true,
+                changeOrigin: false,
             },
         },
     },

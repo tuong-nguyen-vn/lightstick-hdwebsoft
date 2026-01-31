@@ -1,0 +1,224 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  SERVER_DIR: /var/www/lightstick
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create env files for build
+        run: |
+          # Server env (for reference, actual env created on server)
+          cat > apps/server/.env << EOF
+          PORT=3002
+          HOST=0.0.0.0
+          NODE_ENV=production
+          CORS_ORIGINS=https://${{ vars.DOMAIN_ADMIN }},https://${{ vars.DOMAIN_VIEWER }}
+          EOF
+
+          # Admin env
+          cat > apps/admin/.env << EOF
+          VITE_WS_URL=wss://${{ vars.DOMAIN_ADMIN }}/ws
+          VITE_VIEWER_URL=https://${{ vars.DOMAIN_VIEWER }}
+          EOF
+
+          # Viewer env
+          cat > apps/viewer/.env << EOF
+          VITE_WS_URL=wss://${{ vars.DOMAIN_ADMIN }}/ws
+          EOF
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Setup server (first time only)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Create directory
+            mkdir -p ${{ env.SERVER_DIR }}
+            
+            # Install Node.js if not exists
+            if ! command -v node &> /dev/null; then
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+            fi
+            
+            # Install pnpm if not exists
+            if ! command -v pnpm &> /dev/null; then
+              npm install -g pnpm
+            fi
+            
+            # Install PM2 if not exists
+            if ! command -v pm2 &> /dev/null; then
+              npm install -g pm2
+            fi
+            
+            # Install Nginx if not exists
+            if ! command -v nginx &> /dev/null; then
+              sudo apt-get update
+              sudo apt-get install -y nginx
+            fi
+            
+            # Install Certbot if not exists
+            if ! command -v certbot &> /dev/null; then
+              sudo apt-get install -y certbot python3-certbot-nginx
+            fi
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "apps,packages,pnpm-lock.yaml,pnpm-workspace.yaml,package.json"
+          target: ${{ env.SERVER_DIR }}
+          strip_components: 0
+          overwrite: true
+
+      - name: Configure Nginx and Start app
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ env.SERVER_DIR }}
+            
+            # Create server .env
+            cat > apps/server/.env << EOF
+            PORT=3002
+            HOST=0.0.0.0
+            NODE_ENV=production
+            CORS_ORIGINS=https://${{ vars.DOMAIN_ADMIN }},https://${{ vars.DOMAIN_VIEWER }}
+            EOF
+            
+            # Install production dependencies
+            pnpm install --frozen-lockfile
+            
+            # Create Nginx config for Admin
+            sudo tee /etc/nginx/sites-available/${{ vars.DOMAIN_ADMIN }} << 'NGINX_ADMIN'
+            server {
+                listen 80;
+                server_name ${{ vars.DOMAIN_ADMIN }};
+                
+                # Frontend (Admin)
+                location / {
+                    root /var/www/lightstick/apps/admin/dist;
+                    try_files $uri $uri/ /index.html;
+                }
+                
+                # WebSocket
+                location /ws {
+                    proxy_pass http://127.0.0.1:3002/ws;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_read_timeout 86400;
+                }
+                
+                # Backend API
+                location /api/ {
+                    rewrite ^/api/(.*) /$1 break;
+                    proxy_pass http://127.0.0.1:3002;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+            }
+            NGINX_ADMIN
+            
+            # Create Nginx config for Viewer
+            sudo tee /etc/nginx/sites-available/${{ vars.DOMAIN_VIEWER }} << 'NGINX_VIEWER'
+            server {
+                listen 80;
+                server_name ${{ vars.DOMAIN_VIEWER }};
+                
+                root /var/www/lightstick/apps/viewer/dist;
+                
+                location / {
+                    try_files $uri $uri/ /index.html;
+                }
+                
+                # WebSocket for viewer
+                location /ws {
+                    proxy_pass http://127.0.0.1:3002/ws;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_read_timeout 86400;
+                }
+            }
+            NGINX_VIEWER
+            
+            # Enable sites
+            sudo ln -sf /etc/nginx/sites-available/${{ vars.DOMAIN_ADMIN }} /etc/nginx/sites-enabled/
+            sudo ln -sf /etc/nginx/sites-available/${{ vars.DOMAIN_VIEWER }} /etc/nginx/sites-enabled/
+            
+            # Test and reload Nginx
+            sudo nginx -t && sudo systemctl reload nginx
+            
+            # Create PM2 ecosystem
+            cat > ecosystem.config.cjs << EOF
+            module.exports = {
+              apps: [{
+                name: 'lightstick-server',
+                script: 'dist/index.js',
+                cwd: '/var/www/lightstick/apps/server',
+                instances: 1,
+                exec_mode: 'fork',
+                env: {
+                  NODE_ENV: 'production',
+                  PORT: 3002,
+                  CORS_ORIGINS: 'https://${{ vars.DOMAIN_ADMIN }},https://${{ vars.DOMAIN_VIEWER }}'
+                },
+                max_memory_restart: '500M'
+              }]
+            }
+            EOF
+            
+            # Restart app
+            pm2 delete lightstick-server 2>/dev/null || true
+            pm2 start ecosystem.config.cjs
+            pm2 save
+            
+            # Restore SSL certificates
+            certbot --nginx -d ${{ vars.DOMAIN_ADMIN }} -d ${{ vars.DOMAIN_VIEWER }} --non-interactive --reinstall 2>/dev/null || true
+            
+            echo "✅ Deployment completed!"
+            echo "Admin: https://${{ vars.DOMAIN_ADMIN }}"
+            echo "Viewer: https://${{ vars.DOMAIN_VIEWER }}"
