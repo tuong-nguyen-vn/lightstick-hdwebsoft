@@ -4,6 +4,7 @@ import { PATTERN_DEFINITIONS, PATTERN_TYPES, CONFIG, DEFAULT_COLORS } from '@lig
 
 interface PatternControlProps {
   onApply: (state: LightstickState) => void;
+  onPreview?: (state: LightstickState) => void;
   currentPattern?: PatternType;
   currentParams?: PatternParams;
 }
@@ -43,6 +44,7 @@ const PATTERN_ICONS: Record<PatternType, JSX.Element> = {
 
 export default function PatternControl({
   onApply,
+  onPreview,
   currentPattern,
   currentParams,
 }: PatternControlProps) {
@@ -51,14 +53,37 @@ export default function PatternControl({
   const [baseColor, setBaseColor] = useState(currentParams?.colors?.[0] || '#FF0000');
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const triggerPreview = useCallback((pattern: PatternType | null, newSpeed?: number, newColor?: string) => {
+    if (!pattern) return;
+    onPreview?.({
+      mode: 'pattern',
+      pattern,
+      patternParams: { speed: newSpeed ?? speed, colors: [newColor ?? baseColor], intensity: 1 },
+      color: newColor ?? baseColor,
+    });
+  }, [onPreview, speed, baseColor]);
+
   const handlePatternSelect = (pattern: PatternType) => {
     setSelectedPattern(pattern);
     const def = PATTERN_DEFINITIONS[pattern];
-    setSpeed(def.defaultParams.speed || 1000);
+    const newSpeed = def.defaultParams.speed || 1000;
+    const newColor = def.defaultParams.colors?.[0] || baseColor;
+    setSpeed(newSpeed);
     if (def.defaultParams.colors?.[0]) {
-      setBaseColor(def.defaultParams.colors[0]);
+      setBaseColor(newColor);
     }
+    triggerPreview(pattern, newSpeed, newColor);
   };
+
+  const handleSpeedChange = useCallback((newSpeed: number) => {
+    setSpeed(newSpeed);
+    triggerPreview(selectedPattern, newSpeed);
+  }, [selectedPattern, triggerPreview]);
+
+  const handleColorChange = useCallback((newColor: string) => {
+    setBaseColor(newColor);
+    triggerPreview(selectedPattern, undefined, newColor);
+  }, [selectedPattern, triggerPreview]);
 
   const handleApply = useCallback(() => {
     if (!selectedPattern) return;
@@ -132,7 +157,7 @@ export default function PatternControl({
                 max={CONFIG.PATTERN_SPEED_MAX}
                 step={50}
                 value={CONFIG.PATTERN_SPEED_MIN + CONFIG.PATTERN_SPEED_MAX - speed}
-                onChange={(e) => setSpeed(CONFIG.PATTERN_SPEED_MIN + CONFIG.PATTERN_SPEED_MAX - Number(e.target.value))}
+                onChange={(e) => handleSpeedChange(CONFIG.PATTERN_SPEED_MIN + CONFIG.PATTERN_SPEED_MAX - Number(e.target.value))}
                 className="w-full accent-primary-500"
               />
               <div className="flex justify-between text-xs text-slate-500 mt-1">
@@ -147,14 +172,14 @@ export default function PatternControl({
                 <input
                   type="color"
                   value={baseColor}
-                  onChange={(e) => setBaseColor(e.target.value)}
+                  onChange={(e) => handleColorChange(e.target.value)}
                   className="w-12 h-12 rounded-lg cursor-pointer border-2 border-slate-600 bg-transparent"
                 />
                 <div className="flex flex-wrap gap-1 flex-1">
                   {DEFAULT_COLORS.slice(0, 8).map((color) => (
                     <button
                       key={color}
-                      onClick={() => setBaseColor(color)}
+                      onClick={() => handleColorChange(color)}
                       className={`w-8 h-8 rounded border-2 ${
                         baseColor === color ? 'border-white' : 'border-transparent'
                       }`}

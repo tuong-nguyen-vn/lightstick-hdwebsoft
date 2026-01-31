@@ -3,6 +3,7 @@ import { YEP_SCENES, type ScenePreset } from '@lightstick/shared';
 
 interface SceneControlProps {
   onApply: (state: LightstickState) => void;
+  onPreview?: (state: LightstickState) => void;
 }
 
 function getPatternIcon(pattern?: string): JSX.Element {
@@ -20,9 +21,13 @@ function getPatternIcon(pattern?: string): JSX.Element {
   }
 }
 
-export default function SceneControl({ onApply }: SceneControlProps) {
+export default function SceneControl({ onApply, onPreview }: SceneControlProps) {
   const handleSceneSelect = (scene: ScenePreset) => {
     onApply(scene.state);
+  };
+
+  const handleSceneHover = (scene: ScenePreset) => {
+    onPreview?.(scene.state);
   };
 
   return (
@@ -39,6 +44,7 @@ export default function SceneControl({ onApply }: SceneControlProps) {
           <button
             key={scene.id}
             onClick={() => handleSceneSelect(scene)}
+            onMouseEnter={() => handleSceneHover(scene)}
             className="p-4 rounded-xl border-2 border-slate-600 hover:border-primary-500 bg-slate-700/50 hover:bg-slate-700 transition-all flex flex-col items-center gap-2"
           >
             <div className="flex items-center gap-2">

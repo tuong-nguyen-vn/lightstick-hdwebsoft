@@ -4,11 +4,17 @@ import { DEFAULT_COLORS } from '@lightstick/shared';
 
 interface ColorControlProps {
   onApply: (state: LightstickState) => void;
+  onPreview?: (state: LightstickState) => void;
   currentColor?: string;
 }
 
-export default function ColorControl({ onApply, currentColor = '#FFFFFF' }: ColorControlProps) {
+export default function ColorControl({ onApply, onPreview, currentColor = '#FFFFFF' }: ColorControlProps) {
   const [selectedColor, setSelectedColor] = useState(currentColor);
+
+  const handleColorChange = useCallback((color: string) => {
+    setSelectedColor(color);
+    onPreview?.({ mode: 'color', color });
+  }, [onPreview]);
 
   const handleApply = useCallback(() => {
     onApply({
@@ -18,8 +24,8 @@ export default function ColorControl({ onApply, currentColor = '#FFFFFF' }: Colo
   }, [onApply, selectedColor]);
 
   const handlePresetClick = useCallback((color: string) => {
-    setSelectedColor(color);
-  }, []);
+    handleColorChange(color);
+  }, [handleColorChange]);
 
   return (
     <div className="bg-slate-800 rounded-xl p-6">
@@ -55,7 +61,7 @@ export default function ColorControl({ onApply, currentColor = '#FFFFFF' }: Colo
               <input
                 type="color"
                 value={selectedColor}
-                onChange={(e) => setSelectedColor(e.target.value)}
+                onChange={(e) => handleColorChange(e.target.value)}
                 className="w-14 h-14 rounded-lg cursor-pointer border-2 border-slate-600 bg-transparent"
               />
             </div>
@@ -63,7 +69,7 @@ export default function ColorControl({ onApply, currentColor = '#FFFFFF' }: Colo
               <input
                 type="text"
                 value={selectedColor}
-                onChange={(e) => setSelectedColor(e.target.value)}
+                onChange={(e) => handleColorChange(e.target.value)}
                 className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white font-mono uppercase"
                 placeholder="#FFFFFF"
               />

@@ -151,6 +151,7 @@ function ConnectedControlPanel({
   onChangeRoom,
 }: ConnectedControlPanelProps) {
   const [activeTab, setActiveTab] = useState<ControlTab>('color');
+  const [previewState, setPreviewState] = useState<LightstickState | null>(null);
   
   const { isConnected, deviceCount, currentState, sendCommand } = useAdminWebSocket({
     roomCode: roomInfo.roomCode,
@@ -167,7 +168,14 @@ function ConnectedControlPanel({
 
   const handleSendState = useCallback((state: LightstickState) => {
     sendCommand(state);
+    setPreviewState(null);
   }, [sendCommand]);
+
+  const handlePreview = useCallback((state: LightstickState) => {
+    setPreviewState(state);
+  }, []);
+
+  const displayState = previewState || currentState;
 
   const tabs: { key: ControlTab; label: string; icon: JSX.Element }[] = [
     {
@@ -245,6 +253,7 @@ function ConnectedControlPanel({
         {activeTab === 'color' && (
           <ColorControl
             onApply={handleSendState}
+            onPreview={handlePreview}
             currentColor={currentState?.color}
           />
         )}
@@ -252,6 +261,7 @@ function ConnectedControlPanel({
         {activeTab === 'text' && (
           <TextControl
             onApply={handleSendState}
+            onPreview={handlePreview}
             currentText={currentState?.text}
             currentSpeed={currentState?.textSpeed}
             currentColor={currentState?.color}
@@ -261,23 +271,24 @@ function ConnectedControlPanel({
         {activeTab === 'pattern' && (
           <PatternControl
             onApply={handleSendState}
+            onPreview={handlePreview}
             currentPattern={currentState?.pattern}
             currentParams={currentState?.patternParams}
           />
         )}
 
         {activeTab === 'scenes' && (
-          <SceneControl onApply={handleSendState} />
+          <SceneControl onApply={handleSendState} onPreview={handlePreview} />
         )}
 
         {activeTab === 'icon' && (
-          <IconControl onApply={handleSendState} />
+          <IconControl onApply={handleSendState} onPreview={handlePreview} />
         )}
       </div>
 
       {/* Phone Preview - hidden on small screens */}
       <div className="hidden xl:block sticky top-4 h-fit">
-        <PhonePreview state={currentState} />
+        <PhonePreview state={displayState} />
       </div>
     </div>
   );

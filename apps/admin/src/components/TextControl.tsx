@@ -4,6 +4,7 @@ import { CONFIG, DEFAULT_COLORS, YEP_PRESET_TEXTS } from '@lightstick/shared';
 
 interface TextControlProps {
   onApply: (state: LightstickState) => void;
+  onPreview?: (state: LightstickState) => void;
   currentText?: string;
   currentSpeed?: number;
   currentColor?: string;
@@ -40,6 +41,7 @@ const saveSavedTexts = (texts: SavedText[]) => {
 
 export default function TextControl({
   onApply,
+  onPreview,
   currentText = '',
   currentSpeed = CONFIG.TEXT_SPEED_DEFAULT,
   currentColor = '#FFFFFF',
@@ -49,6 +51,36 @@ export default function TextControl({
   const [textColor, setTextColor] = useState(currentColor);
   const [bgColor, setBgColor] = useState('#000000');
   const [savedTexts, setSavedTexts] = useState<SavedText[]>([]);
+
+  const triggerPreview = useCallback((newText?: string, newSpeed?: number, newTextColor?: string, newBgColor?: string) => {
+    onPreview?.({
+      mode: 'text',
+      text: newText ?? text,
+      textSpeed: newSpeed ?? speed,
+      color: newTextColor ?? textColor,
+      backgroundColor: newBgColor ?? bgColor,
+    });
+  }, [onPreview, text, speed, textColor, bgColor]);
+
+  const handleTextChange = useCallback((newText: string) => {
+    setText(newText);
+    onPreview?.({ mode: 'text', text: newText, textSpeed: speed, color: textColor, backgroundColor: bgColor });
+  }, [onPreview, speed, textColor, bgColor]);
+
+  const handleSpeedChange = useCallback((newSpeed: number) => {
+    setSpeed(newSpeed);
+    triggerPreview(undefined, newSpeed);
+  }, [triggerPreview]);
+
+  const handleTextColorChange = useCallback((newColor: string) => {
+    setTextColor(newColor);
+    triggerPreview(undefined, undefined, newColor);
+  }, [triggerPreview]);
+
+  const handleBgColorChange = useCallback((newColor: string) => {
+    setBgColor(newColor);
+    triggerPreview(undefined, undefined, undefined, newColor);
+  }, [triggerPreview]);
 
   useEffect(() => {
     setSavedTexts(loadSavedTexts());
@@ -80,8 +112,8 @@ export default function TextControl({
   }, [savedTexts]);
 
   const handleSelectSavedText = useCallback((savedText: SavedText) => {
-    setText(savedText.text);
-  }, []);
+    handleTextChange(savedText.text);
+  }, [handleTextChange]);
 
   const getSpeedPreset = (value: number): SpeedPreset => {
     if (value >= 4000) return 'fast';
@@ -90,7 +122,7 @@ export default function TextControl({
   };
 
   const handleSpeedPreset = (preset: SpeedPreset) => {
-    setSpeed(SPEED_PRESETS[preset].value);
+    handleSpeedChange(SPEED_PRESETS[preset].value);
   };
 
   const handleApply = useCallback(() => {
@@ -137,7 +169,7 @@ export default function TextControl({
               {YEP_PRESET_TEXTS.map((preset) => (
                 <button
                   key={preset}
-                  onClick={() => setText(preset)}
+                  onClick={() => handleTextChange(preset)}
                   className="px-3 py-1.5 bg-primary-500/20 hover:bg-primary-500/40 text-primary-300 rounded-lg text-sm transition-colors"
                 >
                   {preset}
@@ -180,7 +212,7 @@ export default function TextControl({
 
           <textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => handleTextChange(e.target.value)}
             placeholder="Enter text to display..."
             rows={2}
             maxLength={100}
@@ -212,7 +244,7 @@ export default function TextControl({
             max={CONFIG.TEXT_SPEED_MAX}
             step={10}
             value={speed}
-            onChange={(e) => setSpeed(Number(e.target.value))}
+            onChange={(e) => handleSpeedChange(Number(e.target.value))}
             className="w-full accent-primary-500"
           />
           <div className="flex justify-between text-xs text-slate-500 mt-1">
@@ -224,53 +256,53 @@ export default function TextControl({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Text Color</label>
-            <div className="flex gap-2">
-              <input
-                type="color"
-                value={textColor}
-                onChange={(e) => setTextColor(e.target.value)}
-                className="w-12 h-12 rounded-lg cursor-pointer border-2 border-slate-600 bg-transparent"
-              />
-              <div className="flex flex-wrap gap-1 flex-1">
-                {DEFAULT_COLORS.slice(0, 6).map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setTextColor(color)}
-                    className={`w-6 h-6 rounded border ${
-                      textColor === color ? 'border-white' : 'border-transparent'
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
+          <label className="block text-sm text-slate-400 mb-2">Text Color</label>
+          <div className="flex gap-2">
+            <input
+              type="color"
+              value={textColor}
+              onChange={(e) => handleTextColorChange(e.target.value)}
+              className="w-12 h-12 rounded-lg cursor-pointer border-2 border-slate-600 bg-transparent"
+            />
+            <div className="flex flex-wrap gap-1 flex-1">
+              {DEFAULT_COLORS.slice(0, 6).map((color) => (
+                <button
+                  key={color}
+                  onClick={() => handleTextColorChange(color)}
+                  className={`w-6 h-6 rounded border ${
+                    textColor === color ? 'border-white' : 'border-transparent'
+                  }`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
             </div>
+          </div>
           </div>
 
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Background</label>
-            <div className="flex gap-2">
-              <input
-                type="color"
-                value={bgColor}
-                onChange={(e) => setBgColor(e.target.value)}
-                className="w-12 h-12 rounded-lg cursor-pointer border-2 border-slate-600 bg-transparent"
+          <label className="block text-sm text-slate-400 mb-2">Background</label>
+          <div className="flex gap-2">
+            <input
+              type="color"
+              value={bgColor}
+              onChange={(e) => handleBgColorChange(e.target.value)}
+              className="w-12 h-12 rounded-lg cursor-pointer border-2 border-slate-600 bg-transparent"
+            />
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={() => handleBgColorChange('#000000')}
+                className={`w-6 h-6 rounded border ${
+                  bgColor === '#000000' ? 'border-white' : 'border-slate-600'
+                } bg-black`}
               />
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={() => setBgColor('#000000')}
-                  className={`w-6 h-6 rounded border ${
-                    bgColor === '#000000' ? 'border-white' : 'border-slate-600'
-                  } bg-black`}
-                />
-                <button
-                  onClick={() => setBgColor('#1e293b')}
-                  className={`w-6 h-6 rounded border ${
-                    bgColor === '#1e293b' ? 'border-white' : 'border-transparent'
-                  } bg-slate-800`}
-                />
-              </div>
+              <button
+                onClick={() => handleBgColorChange('#1e293b')}
+                className={`w-6 h-6 rounded border ${
+                  bgColor === '#1e293b' ? 'border-white' : 'border-transparent'
+                } bg-slate-800`}
+              />
             </div>
+          </div>
           </div>
         </div>
 

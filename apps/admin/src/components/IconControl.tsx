@@ -4,24 +4,40 @@ import { ICON_PRESETS, DEFAULT_COLORS } from '@lightstick/shared';
 
 interface IconControlProps {
   onApply: (state: LightstickState) => void;
+  onPreview?: (state: LightstickState) => void;
 }
 
-export default function IconControl({ onApply }: IconControlProps) {
+export default function IconControl({ onApply, onPreview }: IconControlProps) {
   const [selectedIcon, setSelectedIcon] = useState<string>(ICON_PRESETS[0]);
   const [customIcon, setCustomIcon] = useState('');
   const [bgColor, setBgColor] = useState('#000000');
 
+  const triggerPreview = useCallback((icon: string, newBgColor?: string) => {
+    onPreview?.({
+      mode: 'icon',
+      icon,
+      backgroundColor: newBgColor ?? bgColor,
+    });
+  }, [onPreview, bgColor]);
+
   const handleIconSelect = (icon: string) => {
     setSelectedIcon(icon);
     setCustomIcon('');
+    triggerPreview(icon);
   };
 
   const handleCustomIconChange = (value: string) => {
     setCustomIcon(value);
     if (value) {
       setSelectedIcon(value);
+      triggerPreview(value);
     }
   };
+
+  const handleBgColorChange = useCallback((newColor: string) => {
+    setBgColor(newColor);
+    triggerPreview(customIcon || selectedIcon, newColor);
+  }, [customIcon, selectedIcon, triggerPreview]);
 
   const handleApply = useCallback(() => {
     const icon = customIcon || selectedIcon;
@@ -84,12 +100,12 @@ export default function IconControl({ onApply }: IconControlProps) {
             <input
               type="color"
               value={bgColor}
-              onChange={(e) => setBgColor(e.target.value)}
+              onChange={(e) => handleBgColorChange(e.target.value)}
               className="w-12 h-12 rounded-lg cursor-pointer border-2 border-slate-600 bg-transparent"
             />
             <div className="flex flex-wrap gap-1 flex-1">
               <button
-                onClick={() => setBgColor('#000000')}
+                onClick={() => handleBgColorChange('#000000')}
                 className={`w-8 h-8 rounded border-2 ${
                   bgColor === '#000000' ? 'border-white' : 'border-slate-600'
                 } bg-black`}
@@ -97,7 +113,7 @@ export default function IconControl({ onApply }: IconControlProps) {
               {DEFAULT_COLORS.slice(0, 7).map((color) => (
                 <button
                   key={color}
-                  onClick={() => setBgColor(color)}
+                  onClick={() => handleBgColorChange(color)}
                   className={`w-8 h-8 rounded border-2 ${
                     bgColor === color ? 'border-white' : 'border-transparent'
                   }`}
